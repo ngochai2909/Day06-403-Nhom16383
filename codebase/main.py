@@ -26,7 +26,7 @@ if not _api_key:
 
 client = OpenAI(
     api_key=_api_key,
-    base_url="http://localhost:20128/v1"
+    # base_url="http://localhost:20128/v1"
 )
 
 # ============================================================
