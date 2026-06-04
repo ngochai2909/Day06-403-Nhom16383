@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Crisis Copilot — Nhóm 16383 · Demo Slides</title>
+<style>
+  :root{
+    --navy:#0f294d; --blue:#1890ff; --blue-soft:#e6f2ff;
+    --red:#ff4d4f; --red-soft:#fff1f0; --green:#52c41a; --green-soft:#f0fff4;
+    --amber:#fa8c16; --amber-soft:#fff7e6;
+    --ink:#1f2d3d; --muted:#6b7a8d; --line:#e6ebf2; --bg:#f4f8fd;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+    background:#0a1830;color:var(--ink);overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  /* ----- Deck frame (16:9) ----- */
+  .deck{
+    position:relative;width:96vw;max-width:1280px;aspect-ratio:16/9;max-height:96vh;
+    background:var(--bg);border-radius:18px;overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+  }
+  .slide{
+    position:absolute;inset:0;padding:56px 64px;opacity:0;visibility:hidden;
+    transform:translateY(14px);transition:opacity .35s ease,transform .35s ease;
+    display:flex;flex-direction:column;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:none;}
+  /* ----- Common bits ----- */
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:14px;}
+  .kicker .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);}
+  h1{font-size:52px;line-height:1.08;color:var(--navy);font-weight:800;letter-spacing:-.5px;}
+  h2{font-size:40px;line-height:1.12;color:var(--navy);font-weight:800;letter-spacing:-.5px;margin-bottom:24px;}
+  p{font-size:20px;line-height:1.5;color:var(--ink);}
+  .muted{color:var(--muted);}
+  .grow{flex:1;}
+  /* progress + footer */
+  .footer{position:absolute;left:64px;right:64px;bottom:22px;display:flex;
+    align-items:center;justify-content:space-between;font-size:13px;color:var(--muted);}
+  .progress{position:absolute;top:0;left:0;height:5px;background:var(--blue);transition:width .35s ease;z-index:5;}
+  .pager{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:5;}
+  .pager button{width:9px;height:9px;border-radius:50%;border:none;background:#cdd9e8;cursor:pointer;padding:0;transition:.2s;}
+  .pager button.on{background:var(--blue);width:24px;border-radius:5px;}
+  .nav{position:absolute;bottom:14px;right:22px;display:flex;gap:8px;z-index:6;}
+  .nav button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:#fff;
+    color:var(--navy);font-size:18px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+  .nav button:hover{background:var(--blue);color:#fff;border-color:var(--blue);}
+  /* cards & layouts */
+  .row{display:flex;gap:22px;}
+  .col{flex:1;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;
+    box-shadow:0 6px 18px rgba(15,41,77,.05);}
+  .quote{background:#fff;border-left:5px solid var(--red);border-radius:12px;padding:16px 20px;
+    box-shadow:0 4px 14px rgba(255,77,79,.08);font-size:18px;color:#3a0a0b;}
+  .quote .src{display:block;margin-top:6px;font-size:13px;color:var(--muted);font-weight:600;}
+  .tag{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700;}
+  .tag.red{background:var(--red-soft);color:var(--red);}
+  .tag.blue{background:var(--blue-soft);color:var(--blue);}
+  .tag.green{background:var(--green-soft);color:var(--green);}
+  .tag.amber{background:var(--amber-soft);color:var(--amber);}
+  ul.clean{list-style:none;}
+  ul.clean li{position:relative;padding-left:30px;margin:14px 0;font-size:20px;line-height:1.45;}
+  ul.clean li::before{content:"";position:absolute;left:0;top:9px;width:14px;height:14px;border-radius:4px;background:var(--blue);}
+  .big{font-size:26px;line-height:1.45;}
+  .arrow-flow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-weight:700;color:var(--navy);font-size:19px;}
+  .arrow-flow .step{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 18px;box-shadow:0 3px 10px rgba(0,0,0,.05);}
+  .arrow-flow .ar{color:var(--blue);font-size:24px;}
+  /* paths grid */
+  .paths{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .path{border-radius:16px;padding:18px 22px;background:#fff;border:1px solid var(--line);box-shadow:0 6px 16px rgba(15,41,77,.05);}
+  .path h3{font-size:21px;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+  .path p{font-size:16px;color:var(--muted);}
+  .path .n{display:inline-flex;width:30px;height:30px;border-radius:9px;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;}
+  .canvas{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .members{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-weight:600;color:var(--navy);font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+  .hero-badge{display:inline-block;background:var(--navy);color:#fff;padding:7px 16px;border-radius:999px;font-weight:700;font-size:14px;letter-spacing:.05em;}
+  .tagline{font-size:26px;color:var(--blue);font-weight:700;margin-top:18px;}
+  .stat{display:flex;gap:12px;align-items:baseline;}
+  .stat b{font-size:34px;color:var(--blue);font-weight:800;}
+  .demo-input{background:var(--navy);color:#dce8f7;border-radius:12px;padding:14px 18px;font-family:'Consolas',monospace;font-size:16px;margin:10px 0;}
+  .demo-input b{color:#fff;}
+  .hide-chrome .footer,.hide-chrome .pager{opacity:0;}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+  <div class="progress" id="progress"></div>
+
+  <!-- 1 · COVER -->
+  <section class="slide hide-chrome">
+    <div class="kicker"><span class="dot"></span> AI Product Mini-Hackathon · Track B</div>
+    <div class="grow" style="display:flex;flex-direction:column;justify-content:center;">
+      <span class="hero-badge">🚀 Trip.com · Travel &amp; Hospitality</span>
+      <h1 style="margin-top:22px;font-size:64px;">AI Crisis Copilot</h1>
+      <p class="tagline">Chiếc phao cứu sinh khi booking gặp sự cố.</p>
+      <div class="members">
+        <span class="chip" style="background:var(--navy);color:#fff;">Nhóm 16383 · Track B</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · PAINPOINT -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Painpoint · Bằng chứng thật</div>
+    <h2>Khách Trip.com đang gào thét trên App Store</h2>
+    <div class="row grow">
+      <div class="col" style="display:flex;flex-direction:column;gap:14px;justify-content:center;">
+        <div class="quote">“Tự động hủy vé xong không hoàn tiền… liên lạc nhân viên không được.”<span class="src">★ App Store · Trip.com</span></div>
+        <div class="quote">“Đảm bảo 24/7 mà phát sinh vấn đề thì tổng đài báo giờ làm đến 18:00.”<span class="src">★ App Store · Trip.com</span></div>
+        <div class="quote">“Mã lúc 00:00, chưa tới 00:01 đã kêu hết hạn. LỪA ĐẢO.”<span class="src">★ App Store · Trip.com</span></div>
+      </div>
+      <div class="col" style="display:flex;flex-direction:column;justify-content:center;gap:18px;">
+        <div class="card">
+          <span class="tag red">Hậu quả</span>
+          <p class="big" style="margin-top:12px;">Sự cố trừ tiền / hủy vé <b>sát giờ bay</b> → bot trả lời <b>văn mẫu</b> → không gọi được người thật.</p>
+        </div>
+        <div class="stat"><b>1★</b><p class="muted">Hàng loạt review gọi thẳng app là <b>“lừa đảo”</b>, “bỏ rơi”.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · INSIGHT -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Insight</div>
+    <h2>Họ không cần “đặt vé tốt hơn” — họ cần một chiếc phao</h2>
+    <div class="row grow" style="align-items:center;">
+      <div class="col card" style="border-left:5px solid var(--muted);">
+        <span class="tag blue">Surface need</span>
+        <p class="big" style="margin-top:12px;">Tính năng đặt vé ổn định.</p>
+        <p class="muted" style="margin-top:8px;">→ Cái ai cũng nghĩ tới.</p>
+      </div>
+      <div class="arrow-flow" style="flex:0;"><span class="ar">➜</span></div>
+      <div class="col card" style="border-left:5px solid var(--blue);">
+        <span class="tag green">Deeper need</span>
+        <p class="big" style="margin-top:12px;"><b>Recovery &amp; Trust</b> — được cứu tức thì khi khủng hoảng.</p>
+        <p class="muted" style="margin-top:8px;">→ Cái thật sự giữ chân người dùng.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px;background:var(--navy);color:#fff;border:none;">
+      <p class="big" style="color:#fff;">Thứ giết niềm tin không phải lỗi hệ thống — mà là <b>sự im lặng &amp; văn mẫu</b> của bot khiến khách thấy bị <b>lừa dối và bỏ rơi.</b></p>
+    </div>
+  </section>
+
+  <!-- 4 · SOLUTION -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Giải pháp · Lát cắt</div>
+    <h2>AI Crisis Copilot — xử lý khủng hoảng booking</h2>
+    <div class="arrow-flow grow" style="align-content:center;">
+      <span class="step">📄 Đọc log<br>giao dịch</span><span class="ar">➜</span>
+      <span class="step">🔍 Chẩn đoán<br>nguyên nhân lỗi</span><span class="ar">➜</span>
+      <span class="step">💬 Giải thích<br>minh bạch</span><span class="ar">➜</span>
+      <span class="step" style="border-color:var(--green);background:var(--green-soft);">💸 Auto-Refund<br>(lỗi hệ thống)</span>
+      <span class="ar">/</span>
+      <span class="step" style="border-color:var(--red);background:var(--red-soft);">🆘 Nối người thật<br>(mơ hồ)</span>
+    </div>
+    <div class="card" style="background:var(--blue-soft);border:none;">
+      <span class="tag blue">Lát cắt hẹp</span>
+      <p class="big" style="margin-top:10px;">1 khách bị hủy vé/lỗi tiền · 1 màn chat xử lý sự cố · AI ra <b>1 quyết định</b> (hoàn tiền hoặc escalate). <span class="muted">Không làm tìm vé, đặt phòng, gợi ý du lịch.</span></p>
+    </div>
+  </section>
+
+  <!-- 5 · PRODUCT CANVAS -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> AI Product Canvas</div>
+    <h2>Bốn ô quyết định sản phẩm</h2>
+    <div class="canvas grow">
+      <div class="card"><span class="tag blue">Value · Giá trị</span><p style="margin-top:10px;">Khách bị hủy vé sát giờ. AI cứu họ khỏi cảm giác bị bỏ rơi — điều bot văn mẫu hiện tại làm tệ nhất.</p></div>
+      <div class="card"><span class="tag green">Trust · Niềm tin</span><p style="margin-top:10px;">AI giải thích rõ nguyên nhân + nguồn lỗi. Sai → khách bấm “Khẩn cấp” bypass sang người thật bất cứ lúc nào.</p></div>
+      <div class="card"><span class="tag amber">Feasibility · Khả thi</span><p style="margin-top:10px;">gpt-4o-mini: chi phí <b>&lt; 1 cent/lượt</b>, độ trễ ~1–3s. Rủi ro lớn nhất: hoàn tiền sai → giới hạn bằng guardrail.</p></div>
+      <div class="card"><span class="tag blue">Tín hiệu học</span><p style="margin-top:10px;">Khi khách sửa (Correction), hệ thống <b>log lại</b> để hiệu chỉnh tiêu chí ưu tiên/độ khẩn cấp.</p></div>
+    </div>
+    <p class="muted" style="font-size:14px;margin-top:10px;">* Số chi phí/độ trễ là ước lượng tham khảo của gpt-4o-mini — nhóm cập nhật số đo thật trước demo.</p>
+  </section>
+
+  <!-- 6 · AUGMENT vs AUTOMATE -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Quyết định sản phẩm</div>
+    <h2>Conditional Automation — vì đây là tiền bạc</h2>
+    <div class="row grow" style="align-items:center;">
+      <div class="col card" style="border-top:5px solid var(--green);">
+        <span class="tag green">AI tự động</span>
+        <p class="big" style="margin-top:12px;">Chỉ khi lỗi <b>100% thuộc hệ thống</b> &amp; đủ điều kiện hoàn → tự hoàn tiền ngay.</p>
+      </div>
+      <div class="col card" style="border-top:5px solid var(--amber);">
+        <span class="tag amber">Con người quyết</span>
+        <p class="big" style="margin-top:12px;">Mơ hồ / tranh chấp / khẩn cấp → AI lùi lại, <b>người là Rescuer</b>.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px;background:var(--navy);color:#fff;border:none;">
+      <p class="big" style="color:#fff;">Nguyên tắc: <b>sai càng nặng &amp; khó hoàn tác → càng ít cho AI tự quyết.</b> Hoàn nhầm tiền là không thể đùa.</p>
+    </div>
+  </section>
+
+  <!-- 7 · FOUR PATHS -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Bốn đường đi · Thiết kế cho cả khi AI sai</div>
+    <h2>Một tính năng AI không chỉ có đường thuận</h2>
+    <div class="paths grow">
+      <div class="path" style="border-top:4px solid var(--green);"><h3><span class="n" style="background:var(--green);">1</span> Happy</h3><p>Lỗi rõ → AI giải thích → <b>Auto-Refund 2.5tr</b>, về trong 5–10 phút.</p></div>
+      <div class="path" style="border-top:4px solid var(--blue);"><h3><span class="n" style="background:var(--blue);">2</span> Low-confidence</h3><p>Lỗi không rõ → <b>KHÔNG tự hoàn</b>, đưa 2 lựa chọn: đổi chuyến / gặp người.</p></div>
+      <div class="path" style="border-top:4px solid var(--red);"><h3><span class="n" style="background:var(--red);">3</span> Failure</h3><p>Thiếu dữ liệu / AI bí → tạo ticket <b>P0</b>, nối thẳng nhân viên thật.</p></div>
+      <div class="path" style="border-top:4px solid var(--amber);"><h3><span class="n" style="background:var(--amber);">4</span> Correction</h3><p>AI gán sai độ khẩn → khách bấm “Sửa sai” → nâng <b>P3 → P0</b>, log lại.</p></div>
+    </div>
+  </section>
+
+  <!-- 8 · FAILURE MODE + SAFETY -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Failure mode nguy hiểm nhất</div>
+    <h2>Lưới an toàn: khách luôn thoát được sang người thật</h2>
+    <div class="row grow" style="align-items:center;">
+      <div class="col card" style="border-left:5px solid var(--red);">
+        <span class="tag red">Rủi ro</span>
+        <p class="big" style="margin-top:12px;">AI nhầm “lỗi do khách” → từ chối hoàn tiền → khách <b>lỡ chuyến bay</b>, thiệt hại hàng chục triệu.</p>
+      </div>
+      <div class="col card" style="border-left:5px solid var(--green);">
+        <span class="tag green">Cách chặn</span>
+        <p class="big" style="margin-top:12px;">Gõ <b>“khẩn cấp / sân bay / cứu”</b> → AI bypass <b>P0</b> ngay, mở kênh người thật. Không bao giờ “nhốt” khách.</p>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:16px;font-size:18px;">Owner kiểm thử failure path: <b>Huy</b> — có video quay luồng lỗi.</p>
+  </section>
+
+  <!-- 9 · DEMO -->
+  <section class="slide">
+    <div class="kicker"><span class="dot"></span> Live Demo</div>
+    <h2>Xem AI Crisis Copilot chạy thật</h2>
+    <div class="grow" style="display:flex;flex-direction:column;justify-content:center;gap:20px;">
+      <div class="demo-input" style="font-size:22px;padding:22px 26px;border-left:5px solid var(--green);">
+        <b>① Đường thuận:</b> mã <b>BK-78901</b> → AI tự chẩn đoán lỗi &amp; <b>hoàn tiền 2.5tr</b>.
+      </div>
+      <div class="demo-input" style="font-size:22px;padding:22px 26px;border-left:5px solid var(--red);">
+        <b>② Tình huống khó:</b> mã <b>BK-99999</b> → gõ “khẩn cấp” → <b>bypass nối người thật</b>.
+      </div>
+    </div>
+    <div class="footer" style="position:static;margin-top:auto;padding-top:10px;">
+      <span>FastAPI · OpenAI gpt-4o-mini (tool-calling)</span>
+      <span>🔗 Link demo: <b>&lt;điền link&gt;</b></span>
+    </div>
+  </section>
+
+  <div class="footer"><span>AI Crisis Copilot · Nhóm 16383</span><span id="slidenum"></span></div>
+  <div class="pager" id="pager"></div>
+  <div class="nav"><button id="prev">‹</button><button id="next">›</button></div>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const pager=document.getElementById('pager');
+  const progress=document.getElementById('progress');
+  const slidenum=document.getElementById('slidenum');
+  let i=0;
+  slides.forEach((_,k)=>{const b=document.createElement('button');b.onclick=()=>go(k);pager.appendChild(b);});
+  const dots=[...pager.children];
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    dots.forEach((d,k)=>d.classList.toggle('on',k===i));
+    progress.style.width=((i+1)/slides.length*100)+'%';
+    slidenum.textContent=(i+1)+' / '+slides.length;
+  }
+  document.getElementById('next').onclick=()=>go(i+1);
+  document.getElementById('prev').onclick=()=>go(i-1);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown')go(i+1);
+    if(e.key==='ArrowLeft'||e.key==='PageUp')go(i-1);
+    if(e.key==='Home')go(0); if(e.key==='End')go(slides.length-1);
+  });
+  go(0);
+</script>
+</body>
+</html>
