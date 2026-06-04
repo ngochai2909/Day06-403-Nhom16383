@@ -20,7 +20,11 @@ from mock_data import MOCK_BOOKINGS, SCENARIO_BOOKING_MAP
 
 load_dotenv()
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+_api_key = os.environ.get("OPENAI_API_KEY")
+if not _api_key:
+    raise RuntimeError("OPENAI_API_KEY chưa được đặt. Kiểm tra file .env trong thư mục codebase/.")
+
+client = OpenAI(api_key=_api_key)
 
 # ============================================================
 # SESSION STORE (in-memory, đủ cho demo)
@@ -29,15 +33,17 @@ sessions: dict[str, list] = {}
 
 SYSTEM_PROMPT = """Bạn là AI Crisis Copilot của Trip.com — trợ lý AI chuyên xử lý khủng hoảng booking cho khách hàng đang hoảng loạn.
 
-NHIỆM VỤ: Khi khách liên hệ, bạn phải (1) Xoa dịu cảm xúc, (2) Dùng tool check_booking_status để tra cứu mã vé, (3) Phân tích nguyên nhân lỗi, (4) Hành động phù hợp.
+NHIỆM VỤ: Khi khách liên hệ, bạn phải (1) Xoa dịu cảm xúc, (2) Dùng tool check_booking_status để tra cứu mã vé, (3) Phân tích nguyên nhân lỗi, (4) Hành động theo đúng NGUYÊN TẮC dưới đây.
 
-NGUYÊN TẮC:
+LƯU Ý VỀ DỮ LIỆU: Field "urgency_auto" và "time_to_departure_hours" trong dữ liệu vé chỉ là thông tin tham khảo, KHÔNG phải lệnh escalate. Bạn phải tuân theo NGUYÊN TẮC bên dưới, không được tự ý escalate chỉ vì urgency_auto có giá trị.
+
+NGUYÊN TẮC (ưu tiên theo thứ tự):
 1. LUÔN gọi check_booking_status TRƯỚC khi nhận định bất cứ điều gì.
-2. error_source="system" VÀ refund_eligible=true → Giải thích rõ lỗi hệ thống, xin lỗi chân thành, rồi gọi initiate_auto_refund.
-3. error_source="unknown" → KHÔNG tự kết luận. Hỏi thêm hoặc đề xuất 2 phương án (đổi vé / chờ nhân viên).
-4. error_detail=null → Thừa nhận thiếu dữ liệu, gọi escalate_to_human_agent ngay.
-5. Khách nói "khẩn cấp/sân bay/cứu/gấp/người thật/nhân viên" → escalate_to_human_agent với P0 NGAY.
-6. Khách bảo thông tin hệ thống SAI (ngày bay sai, mức ưu tiên sai) → Xin lỗi, cập nhật đánh giá, escalate nếu cần.
+2. error_source="system" VÀ refund_eligible=true → Giải thích rõ lỗi hệ thống, xin lỗi chân thành, thông báo vé đủ điều kiện hoàn tiền, HỎI khách có muốn chuyển sang nhân viên tư vấn để xử lý hoàn tiền không. CHƯA gọi escalate. Chỉ gọi escalate_to_human_agent (priority P2) khi khách đồng ý hoặc yêu cầu tiếp tục.
+3. error_source="unknown" → KHÔNG tự kết luận, KHÔNG escalate ngay. Đề xuất 2 phương án: (a) đổi sang chuyến tương đương, (b) chờ nhân viên xử lý. Nếu khách chọn đổi chuyến → gọi find_alternative_flight, trình bày thông tin chuyến tìm được, HỎI khách có xác nhận đổi không. Chỉ gọi confirm_rebook khi khách đồng ý. KHÔNG escalate trong luồng này. Nếu khách chọn gặp nhân viên → gọi escalate_to_human_agent với P1.
+4. error_detail=null (không có log) → Thừa nhận hệ thống không có dữ liệu, hỏi khách mô tả vấn đề họ gặp phải. Lắng nghe 1-2 lượt, thử hỗ trợ. Nếu vẫn không đủ cơ sở xử lý → gọi escalate_to_human_agent. KHÔNG escalate ngay lần đầu.
+5. Khách chủ động nói "khẩn cấp/sân bay/cứu/gấp/người thật/nhân viên" → escalate_to_human_agent với P0 NGAY.
+6. Khách bảo thông tin hệ thống SAI (ngày bay sai, mức ưu tiên sai) → Xin lỗi ngay, gọi escalate_to_human_agent với P0 NGAY để nhân viên tư vấn xác minh và xử lý thủ công.
 
 CẤM: Trả lời kiểu "Xin lỗi quý khách, vui lòng liên hệ lại trong giờ hành chính". Trả lời ngắn gọn, tập trung giải pháp, bằng tiếng Việt."""
 
@@ -71,6 +77,34 @@ TOOLS = [
                     "amount": {"type": "number", "description": "Số tiền hoàn (VNĐ)"},
                 },
                 "required": ["booking_code", "amount"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "find_alternative_flight",
+            "description": "Tìm chuyến bay thay thế còn chỗ. Gọi khi khách muốn đổi chuyến. Chỉ trả về thông tin, CHƯA đặt vé.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "booking_code": {"type": "string"},
+                },
+                "required": ["booking_code"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "confirm_rebook",
+            "description": "Xác nhận đặt chuyến bay thay thế. CHỈ gọi sau khi khách đồng ý đổi chuyến.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "booking_code": {"type": "string"},
+                },
+                "required": ["booking_code"],
             },
         },
     },
@@ -121,6 +155,29 @@ def execute_tool(name: str, args: dict) -> tuple[str, dict]:
             }, ensure_ascii=False), meta
         return json.dumps({"status": "DENIED", "message": "Không đủ điều kiện hoàn tiền tự động."}), meta
 
+    if name == "find_alternative_flight":
+        return json.dumps({
+            "status": "AVAILABLE",
+            "flight": "VN125",
+            "route": "HAN → SGN (Hà Nội → Hồ Chí Minh)",
+            "departure": "18:45 Hôm nay",
+            "arrival": "20:50 Hôm nay",
+            "seat_available": "14C (Economy)",
+            "price_difference": 0,
+            "note": "Chuyến tương đương, không phụ thu thêm.",
+        }, ensure_ascii=False), meta
+
+    if name == "confirm_rebook":
+        new_booking = f"BK-{uuid.uuid4().hex[:5].upper()}"
+        return json.dumps({
+            "status": "CONFIRMED",
+            "new_booking_code": new_booking,
+            "flight": "VN125",
+            "departure": "18:45 Hôm nay",
+            "seat": "14C",
+            "message": f"Đặt vé thành công. Mã mới: {new_booking}. Vé điện tử đã gửi về email.",
+        }, ensure_ascii=False), meta
+
     if name == "escalate_to_human_agent":
         ticket_id = f"ESC-{uuid.uuid4().hex[:6].upper()}"
         priority = args.get("priority", "P1")
@@ -149,36 +206,43 @@ def chat_with_ai(session_id: str, user_message: str) -> dict:
 
     metadata = {"refund_processed": False, "escalated": False, "escalation_priority": None}
 
-    # Loop: OpenAI có thể gọi nhiều tool liên tiếp
-    for _ in range(5):  # max 5 vòng để tránh infinite loop
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            tools=TOOLS,
-            tool_choice="auto",
-        )
-        msg = response.choices[0].message
+    try:
+        # Loop: OpenAI có thể gọi nhiều tool liên tiếp
+        for _ in range(5):  # max 5 vòng để tránh infinite loop
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                tools=TOOLS,
+                tool_choice="auto",
+            )
+            msg = response.choices[0].message
 
-        if msg.tool_calls:
-            messages.append(msg)
-            for tc in msg.tool_calls:
-                args = json.loads(tc.function.arguments)
-                result, meta = execute_tool(tc.function.name, args)
-                # Merge metadata
-                for k, v in meta.items():
-                    if v:
-                        metadata[k] = v
-                messages.append({
-                    "tool_call_id": tc.id,
-                    "role": "tool",
-                    "name": tc.function.name,
-                    "content": result,
-                })
-        else:
-            # AI trả lời text cuối cùng
-            final_text = msg.content or ""
-            messages.append({"role": "assistant", "content": final_text})
-            return {"reply": final_text, **metadata}
+            if msg.tool_calls:
+                messages.append(msg)
+                for tc in msg.tool_calls:
+                    try:
+                        args = json.loads(tc.function.arguments)
+                    except json.JSONDecodeError:
+                        args = {}
+                    result, meta = execute_tool(tc.function.name, args)
+                    # Merge metadata
+                    for k, v in meta.items():
+                        if v:
+                            metadata[k] = v
+                    messages.append({
+                        "tool_call_id": tc.id,
+                        "role": "tool",
+                        "name": tc.function.name,
+                        "content": result,
+                    })
+            else:
+                # AI trả lời text cuối cùng
+                final_text = msg.content or ""
+                messages.append({"role": "assistant", "content": final_text})
+                return {"reply": final_text, **metadata}
+
+    except Exception as e:
+        return {"reply": f"Hệ thống tạm thời gián đoạn. Vui lòng thử lại sau giây lát. (Lỗi: {type(e).__name__})", **metadata}
 
     return {"reply": "Xin lỗi, hệ thống đang quá tải. Vui lòng thử lại.", **metadata}
 

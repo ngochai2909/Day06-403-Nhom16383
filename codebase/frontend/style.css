@@ -64,28 +64,6 @@ body {
     background: #1890ff;
 }
 
-.dev-status {
-    margin-top: 12px;
-    font-size: 12px;
-    color: #52c41a;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.dev-status .status-dot {
-    width: 8px;
-    height: 8px;
-    background: #52c41a;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.dev-status.loading { color: #faad14; }
-.dev-status.loading .status-dot { background: #faad14; animation: pulse 1s infinite; }
-.dev-status.error { color: #ff4d4f; }
-.dev-status.error .status-dot { background: #ff4d4f; }
-
 /* Mobile Frame Mockup */
 .mobile-frame {
     width: 375px;
@@ -380,7 +358,6 @@ body {
     gap: 10px;
     overflow-x: auto;
     padding-bottom: 10px;
-    flex-wrap: wrap;
 }
 
 .quick-actions::-webkit-scrollbar {
@@ -510,15 +487,4 @@ body {
     border-radius: 20px;
     font-weight: 600;
     cursor: pointer;
-}
-
-/* Refund success banner */
-.refund-banner {
-    background: linear-gradient(135deg, #f6ffed, #d9f7be);
-    border-left: 3px solid #52c41a;
-    padding: 12px 16px;
-    border-radius: 4px 16px 16px 16px;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #135200;
 }

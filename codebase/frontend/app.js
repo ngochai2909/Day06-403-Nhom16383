@@ -1,111 +1,112 @@
-// ============================================================
-// AI Crisis Copilot — Frontend (gọi Backend API thật)
-// ============================================================
-
-const API_BASE = '';  // Same origin (FastAPI serves frontend)
-
 // DOM Elements
 const screenBooking = document.getElementById('screen-booking');
-const screenChat    = document.getElementById('screen-chat');
-const btnSupport    = document.getElementById('btn-support');
-const btnBack       = document.getElementById('btn-back');
-const chatBox       = document.getElementById('chat-box');
+const screenChat = document.getElementById('screen-chat');
+const btnSupport = document.getElementById('btn-support');
+const btnBack = document.getElementById('btn-back');
+const chatBox = document.getElementById('chat-box');
 const typingIndicator = document.getElementById('typing-indicator');
-const quickActions   = document.getElementById('quick-actions');
-const chatInput      = document.getElementById('chat-input');
-const btnSend        = document.getElementById('btn-send');
+const quickActions = document.getElementById('quick-actions');
+const chatInput = document.getElementById('chat-input');
+const btnSend = document.getElementById('btn-send');
 const handoffOverlay = document.getElementById('handoff-overlay');
 const btnCloseHandoff = document.getElementById('btn-close-handoff');
-const handoffMessage  = document.getElementById('handoff-message');
 const uiFlightStatus = document.getElementById('ui-flight-status');
+const handoffMessage = document.getElementById('handoff-message');
 
 // Dev Panel
 const scenarioSelector = document.getElementById('scenario-selector');
-const btnRestartApp    = document.getElementById('btn-restart-app');
-const devStatus        = document.getElementById('dev-status');
+const btnRestartApp = document.getElementById('btn-restart-app');
 
-// State
-let sessionId = crypto.randomUUID();
-let currentBookingCode = 'BK-78901';
+let currentScenario = 'happy';
+let sessionId = null;
 let isWaiting = false;
+let failureBookingCode = null;
+let failureFirstMessage = true;
 
-// Scenario → Booking code mapping
-const SCENARIO_MAP = {
-    happy:          'BK-78901',
-    low_confidence: 'BK-45678',
-    failure:        'BK-99999',
-    correction:     'BK-11111',
+const SCENARIO_STATUS = {
+    happy: "ĐÃ HỦY",
+    low_confidence: "ĐANG XỬ LÝ",
+    failure: "ĐÃ HỦY",
+    correction: "ĐÃ HỦY"
 };
 
-// Scenario → Quick actions (gửi text cho AI xử lý)
+// Gợi ý nhanh cho từng scenario — gửi như tin nhắn thật lên AI
 const SCENARIO_ACTIONS = {
     happy: [
-        { text: '✨ Hoàn tiền tự động', message: 'Tôi muốn được hoàn tiền tự động ngay bây giờ.' },
-        { text: '📞 Gặp nhân viên', message: 'Tôi muốn gặp nhân viên hỗ trợ.', urgent: true },
+        { text: "Yêu cầu hoàn tiền qua nhân viên" },
+        { text: "Tôi muốn đặt lại vé" }
     ],
     low_confidence: [
-        { text: '🔀 Đổi chuyến tương đương', message: 'Tôi muốn đổi sang chuyến bay tương đương miễn phí.' },
-        { text: '🆘 Gặp nhân viên (Khẩn cấp)', message: 'Khẩn cấp! Tôi cần gặp nhân viên ngay.', urgent: true },
+        { text: "🔀 Đổi chuyến tương đương" },
+        { text: "🆘 Gặp nhân viên (Khẩn cấp)", urgent: true }
     ],
-    failure: [
-        { text: '🆘 Kết nối nhân viên ngay', message: 'Tôi cần gặp người thật ngay lập tức!', urgent: true },
-    ],
+    failure: [],
     correction: [
-        { text: '⚠️ Sửa sai! Chuyến bay là HÔM NAY', message: 'Thông tin sai rồi! Chuyến bay của tôi là HÔM NAY 15:30 chứ không phải 15/10/2026. Tôi đang ở sân bay!', urgent: true },
-        { text: '✅ Thông tin đúng', message: 'Đúng rồi, chuyến bay là ngày 15/10/2026.' },
-    ],
+        { text: "Sai rồi! Chuyến bay của tôi là hôm nay, không phải tháng sau", urgent: true },
+        { text: "Đồng ý với thông tin hệ thống" }
+    ]
 };
 
-// Flight status text per scenario
-const SCENARIO_STATUS = {
-    happy: 'ĐÃ HỦY',
-    low_confidence: 'ĐANG XỬ LÝ',
-    failure: 'ĐÃ HỦY',
-    correction: 'ĐÃ HỦY',
-};
+// App Reset
+function resetApp() {
+    currentScenario = scenarioSelector.value;
+    sessionId = null;
+    isWaiting = false;
+    failureBookingCode = null;
+    failureFirstMessage = true;
 
-// ============================================================
-// UTILITY FUNCTIONS
-// ============================================================
+    screenChat.classList.remove('active');
+    screenBooking.classList.add('active');
+    handoffOverlay.classList.add('hidden');
 
-function setDevStatus(text, type = '') {
-    devStatus.className = 'dev-status ' + type;
-    devStatus.innerHTML = `<span class="status-dot"></span> ${text}`;
+    Array.from(chatBox.querySelectorAll('.message:not(.typing-indicator)')).forEach(msg => msg.remove());
+    clearQuickActions();
+
+    uiFlightStatus.innerText = SCENARIO_STATUS[currentScenario] || "ĐÃ HỦY";
+}
+
+btnRestartApp.addEventListener('click', resetApp);
+
+// Navigation
+btnSupport.addEventListener('click', () => {
+    screenBooking.classList.remove('active');
+    screenChat.classList.add('active');
+    startAIAnalysis();
+});
+
+btnBack.addEventListener('click', () => {
+    screenChat.classList.remove('active');
+    screenBooking.classList.add('active');
+    resetApp();
+});
+
+btnCloseHandoff.addEventListener('click', () => {
+    handoffOverlay.classList.add('hidden');
+});
+
+// Chat Functions
+function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function appendMessage(text, sender, isUrgent = false) {
     const msgDiv = document.createElement('div');
-    if (sender === 'system') {
-        msgDiv.className = 'system-msg';
-        msgDiv.innerHTML = text;
-    } else {
-        msgDiv.className = `message ${sender}-msg ${isUrgent ? 'urgent' : ''}`;
-        msgDiv.innerHTML = `<div class="bubble">${text}</div>`;
-    }
+    msgDiv.className = `message ${sender}-msg ${isUrgent ? 'urgent' : ''}`;
+    const content = sender === 'user' ? escapeHtml(text) : text;
+    msgDiv.innerHTML = `<div class="bubble">${content}</div>`;
     chatBox.insertBefore(msgDiv, typingIndicator);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function showTyping() {
-    typingIndicator.style.display = 'block';
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function hideTyping() {
-    typingIndicator.style.display = 'none';
-}
-
-function renderQuickActions(scenario) {
+function renderQuickActions(actions) {
     quickActions.innerHTML = '';
-    const actions = SCENARIO_ACTIONS[scenario] || [];
     actions.forEach(action => {
         const btn = document.createElement('button');
         btn.className = `quick-btn ${action.urgent ? 'urgent' : ''}`;
         btn.innerText = action.text;
         btn.addEventListener('click', () => {
-            appendMessage(action.text, 'user');
             clearQuickActions();
-            sendMessage(action.message);
+            sendMessage(action.text);
         });
         quickActions.appendChild(btn);
     });
@@ -115,136 +116,108 @@ function clearQuickActions() {
     quickActions.innerHTML = '';
 }
 
-function showHandoff(priority) {
+function triggerHandoff(priority = 'P0') {
+    appendMessage(`🆘 AI đã tạo mã khẩn cấp [${priority}_123]. Chuyển toàn bộ lịch sử chat cho nhân viên...`, 'system');
     handoffMessage.innerText = `AI đã ghi nhận tình huống khẩn cấp (${priority}). Vui lòng giữ máy, nhân viên hỗ trợ sẽ có mặt trong 30 giây...`;
     handoffOverlay.classList.remove('hidden');
 }
 
-// ============================================================
-// API CALLS
-// ============================================================
-
-async function sendMessage(text) {
-    if (isWaiting) return;
-    isWaiting = true;
-    showTyping();
-    setDevStatus('Đang gọi AI...', 'loading');
-
-    try {
-        const res = await fetch(`${API_BASE}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId, message: text }),
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-
-        hideTyping();
-
-        // Hiển thị câu trả lời AI
-        if (data.reply) {
-            appendMessage(data.reply.replace(/\n/g, '<br>'), 'bot');
-        }
-
-        // Kiểm tra escalation
-        if (data.escalated) {
-            setTimeout(() => showHandoff(data.escalation_priority || 'P0'), 1000);
-        }
-
-        // Kiểm tra refund
-        if (data.refund_processed) {
-            setDevStatus('✅ Đã hoàn tiền thành công', '');
-        } else {
-            setDevStatus('Sẵn sàng', '');
-        }
-
-    } catch (err) {
-        hideTyping();
-        appendMessage('⚠️ Lỗi kết nối server. Vui lòng kiểm tra backend đang chạy.', 'system');
-        setDevStatus('Lỗi kết nối!', 'error');
-        console.error(err);
-    }
-
-    isWaiting = false;
-}
-
-async function resetSession() {
-    try {
-        await fetch(`${API_BASE}/api/reset`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId }),
-        });
-    } catch (e) {
-        console.error('Reset failed:', e);
-    }
-    sessionId = crypto.randomUUID();
-}
-
-// ============================================================
-// APP LOGIC
-// ============================================================
-
-function resetApp() {
-    const scenario = scenarioSelector.value;
-    currentBookingCode = SCENARIO_MAP[scenario];
-
-    // Reset UI
-    screenChat.classList.remove('active');
-    screenBooking.classList.add('active');
-    handoffOverlay.classList.add('hidden');
-    clearQuickActions();
-
-    // Clear chat messages
-    Array.from(chatBox.querySelectorAll('.message:not(.typing-indicator), .system-msg')).forEach(m => m.remove());
-
-    // Update booking screen
-    uiFlightStatus.innerText = SCENARIO_STATUS[scenario];
-
-    // Reset backend session
-    resetSession();
-    setDevStatus(`Sẵn sàng — ${currentBookingCode}`, '');
-}
-
-function startChat() {
-    const scenario = scenarioSelector.value;
-
-    screenBooking.classList.remove('active');
-    screenChat.classList.add('active');
-
-    // Gửi tin nhắn đầu tiên tự động (giả lập user vừa bấm "Trợ Giúp Khẩn Cấp")
-    const initMessage = `Tôi cần hỗ trợ khẩn cấp! Mã đặt vé của tôi là ${currentBookingCode}. Vé chuyến bay VN123 của tôi bị hủy và tôi rất lo lắng.`;
-    appendMessage(initMessage, 'user');
-    sendMessage(initMessage).then(() => {
-        // Hiển thị quick actions sau khi AI trả lời
-        renderQuickActions(scenario);
+// API
+async function callAPI(message) {
+    const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, message })
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
 }
 
-// ============================================================
-// EVENT LISTENERS
-// ============================================================
+// AI Flow — AI nói trước
+async function startAIAnalysis() {
+    sessionId = 'session_' + Date.now();
 
-btnRestartApp.addEventListener('click', resetApp);
+    typingIndicator.style.display = 'block';
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-btnSupport.addEventListener('click', startChat);
+    try {
+        const codeRes = await fetch(`/api/booking-code/${currentScenario}`);
+        const codeData = await codeRes.json();
+        const bookingCode = codeData.booking_code;
 
-btnBack.addEventListener('click', () => {
-    screenChat.classList.remove('active');
-    screenBooking.classList.add('active');
-});
+        // Case failure: AI chào trước, chờ khách chat — không gửi booking code ngay
+        if (currentScenario === 'failure') {
+            failureBookingCode = bookingCode;
+            failureFirstMessage = true;
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+                appendMessage('Xin chào! Tôi là trợ lý AI của Trip.com. Bạn cần hỗ trợ gì ạ?', 'bot');
+            }, 800);
+            return;
+        }
 
-btnCloseHandoff.addEventListener('click', () => {
-    handoffOverlay.classList.add('hidden');
-});
+        // Các case khác: gửi booking code ngầm để AI phân tích ngay
+        const INIT_MESSAGES = {
+            happy:          `Mã đặt vé của tôi là ${bookingCode}. Vé chuyến bay của tôi bị hủy đột ngột, tôi cần hỗ trợ ngay.`,
+            low_confidence: `Mã đặt vé của tôi là ${bookingCode}. Vé chuyến bay của tôi bị hủy đột ngột, tôi cần hỗ trợ ngay.`,
+            correction:     `Mã đặt vé của tôi là ${bookingCode}. Vé chuyến bay của tôi bị hủy đột ngột, tôi cần hỗ trợ ngay.`,
+        };
+        const initMsg = INIT_MESSAGES[currentScenario] || `Mã đặt vé của tôi là ${bookingCode}. Tôi cần hỗ trợ.`;
+        const result = await callAPI(initMsg);
+
+        typingIndicator.style.display = 'none';
+        appendMessage(result.reply, 'bot');
+
+        const actions = SCENARIO_ACTIONS[currentScenario] || [];
+        if (actions.length > 0) renderQuickActions(actions);
+
+        if (result.escalated) {
+            setTimeout(() => triggerHandoff(result.escalation_priority || 'P0'), 800);
+        }
+    } catch (e) {
+        typingIndicator.style.display = 'none';
+        appendMessage('Không thể kết nối tới hệ thống. Hãy chắc chắn server đang chạy tại <b>localhost:8000</b>.', 'bot');
+    }
+}
+
+// Gửi tin nhắn
+async function sendMessage(text) {
+    if (!text || isWaiting) return;
+
+    // Case failure: lần đầu khách nhắn, đính kèm booking code ngầm vào API
+    let apiText = text;
+    if (currentScenario === 'failure' && failureFirstMessage && failureBookingCode) {
+        apiText = `Mã đặt vé của tôi là ${failureBookingCode}. ${text}`;
+        failureFirstMessage = false;
+    }
+
+    appendMessage(text, 'user');
+    clearQuickActions();
+    isWaiting = true;
+
+    typingIndicator.style.display = 'block';
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+        const result = await callAPI(apiText);
+        typingIndicator.style.display = 'none';
+        isWaiting = false;
+        appendMessage(result.reply, 'bot');
+
+        if (result.escalated) {
+            setTimeout(() => triggerHandoff(result.escalation_priority || 'P0'), 800);
+        }
+    } catch (e) {
+        typingIndicator.style.display = 'none';
+        isWaiting = false;
+        appendMessage('Lỗi kết nối. Vui lòng thử lại.', 'bot');
+    }
+}
 
 function handleUserInput() {
     const text = chatInput.value.trim();
-    if (!text || isWaiting) return;
-    appendMessage(text, 'user');
+    if (!text) return;
     chatInput.value = '';
-    clearQuickActions();
     sendMessage(text);
 }
 
