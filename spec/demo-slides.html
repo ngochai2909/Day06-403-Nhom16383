@@ -155,13 +155,13 @@
       <span class="step">📄 Đọc log<br>giao dịch</span><span class="ar">➜</span>
       <span class="step">🔍 Chẩn đoán<br>nguyên nhân lỗi</span><span class="ar">➜</span>
       <span class="step">💬 Giải thích<br>minh bạch</span><span class="ar">➜</span>
-      <span class="step" style="border-color:var(--green);background:var(--green-soft);">💸 Auto-Refund<br>(lỗi hệ thống)</span>
+      <span class="step" style="border-color:var(--green);background:var(--green-soft);">🤝 Chuyển nhân viên<br>xử lý hoàn tiền</span>
       <span class="ar">/</span>
       <span class="step" style="border-color:var(--red);background:var(--red-soft);">🆘 Nối người thật<br>(mơ hồ)</span>
     </div>
     <div class="card" style="background:var(--blue-soft);border:none;">
       <span class="tag blue">Lát cắt hẹp</span>
-      <p class="big" style="margin-top:10px;">1 khách bị hủy vé/lỗi tiền · 1 màn chat xử lý sự cố · AI ra <b>1 quyết định</b> (hoàn tiền hoặc escalate). <span class="muted">Không làm tìm vé, đặt phòng, gợi ý du lịch.</span></p>
+      <p class="big" style="margin-top:10px;">1 khách bị hủy vé/lỗi tiền · 1 màn chat xử lý sự cố · AI ra <b>1 quyết định</b> (đổi chuyến · chuyển nhân viên · cứu hộ khẩn cấp). <span class="muted">Không làm tìm vé, đặt phòng, gợi ý du lịch.</span></p>
     </div>
   </section>
 
@@ -172,7 +172,7 @@
     <div class="canvas grow">
       <div class="card"><span class="tag blue">Value · Giá trị</span><p style="margin-top:10px;">Khách bị hủy vé sát giờ. AI cứu họ khỏi cảm giác bị bỏ rơi — điều bot văn mẫu hiện tại làm tệ nhất.</p></div>
       <div class="card"><span class="tag green">Trust · Niềm tin</span><p style="margin-top:10px;">AI giải thích rõ nguyên nhân + nguồn lỗi. Sai → khách bấm “Khẩn cấp” bypass sang người thật bất cứ lúc nào.</p></div>
-      <div class="card"><span class="tag amber">Feasibility · Khả thi</span><p style="margin-top:10px;">gpt-4o-mini: chi phí <b>&lt; 1 cent/lượt</b>, độ trễ ~1–3s. Rủi ro lớn nhất: hoàn tiền sai → giới hạn bằng guardrail.</p></div>
+      <div class="card"><span class="tag amber">Feasibility · Khả thi</span><p style="margin-top:10px;">gpt-4o-mini: chi phí <b>&lt; 1 cent/lượt</b>, độ trễ ~1–3s. Rủi ro: đổi chuyến/định tuyến sai → chặn bằng xác nhận + bypass.</p></div>
       <div class="card"><span class="tag blue">Tín hiệu học</span><p style="margin-top:10px;">Khi khách sửa (Correction), hệ thống <b>log lại</b> để hiệu chỉnh tiêu chí ưu tiên/độ khẩn cấp.</p></div>
     </div>
     <p class="muted" style="font-size:14px;margin-top:10px;">* Số chi phí/độ trễ là ước lượng tham khảo của gpt-4o-mini — nhóm cập nhật số đo thật trước demo.</p>
@@ -185,11 +185,11 @@
     <div class="row grow" style="align-items:center;">
       <div class="col card" style="border-top:5px solid var(--green);">
         <span class="tag green">AI tự động</span>
-        <p class="big" style="margin-top:12px;">Chỉ khi lỗi <b>100% thuộc hệ thống</b> &amp; đủ điều kiện hoàn → tự hoàn tiền ngay.</p>
+        <p class="big" style="margin-top:12px;">Chẩn đoán lỗi, giải thích minh bạch, tìm &amp; xác nhận <b>đổi chuyến</b> theo lựa chọn khách.</p>
       </div>
       <div class="col card" style="border-top:5px solid var(--amber);">
         <span class="tag amber">Con người quyết</span>
-        <p class="big" style="margin-top:12px;">Mơ hồ / tranh chấp / khẩn cấp → AI lùi lại, <b>người là Rescuer</b>.</p>
+        <p class="big" style="margin-top:12px;"><b>Mọi việc hoàn tiền</b> + case mơ hồ/khẩn cấp → AI chuyển <b>nhân viên thật</b>.</p>
       </div>
     </div>
     <div class="card" style="margin-top:20px;background:var(--navy);color:#fff;border:none;">
@@ -202,7 +202,7 @@
     <div class="kicker"><span class="dot"></span> Bốn đường đi · Thiết kế cho cả khi AI sai</div>
     <h2>Một tính năng AI không chỉ có đường thuận</h2>
     <div class="paths grow">
-      <div class="path" style="border-top:4px solid var(--green);"><h3><span class="n" style="background:var(--green);">1</span> Happy</h3><p>Lỗi rõ → AI giải thích → <b>Auto-Refund 2.5tr</b>, về trong 5–10 phút.</p></div>
+      <div class="path" style="border-top:4px solid var(--green);"><h3><span class="n" style="background:var(--green);">1</span> Happy</h3><p>Lỗi rõ → AI giải thích minh bạch → <b>chuyển nhân viên xử lý hoàn tiền</b> (P2).</p></div>
       <div class="path" style="border-top:4px solid var(--blue);"><h3><span class="n" style="background:var(--blue);">2</span> Low-confidence</h3><p>Lỗi không rõ → <b>KHÔNG tự hoàn</b>, đưa 2 lựa chọn: đổi chuyến / gặp người.</p></div>
       <div class="path" style="border-top:4px solid var(--red);"><h3><span class="n" style="background:var(--red);">3</span> Failure</h3><p>Thiếu dữ liệu / AI bí → tạo ticket <b>P0</b>, nối thẳng nhân viên thật.</p></div>
       <div class="path" style="border-top:4px solid var(--amber);"><h3><span class="n" style="background:var(--amber);">4</span> Correction</h3><p>AI gán sai độ khẩn → khách bấm “Sửa sai” → nâng <b>P3 → P0</b>, log lại.</p></div>
@@ -232,7 +232,7 @@
     <h2>Xem AI Crisis Copilot chạy thật</h2>
     <div class="grow" style="display:flex;flex-direction:column;justify-content:center;gap:20px;">
       <div class="demo-input" style="font-size:22px;padding:22px 26px;border-left:5px solid var(--green);">
-        <b>① Đường thuận:</b> mã <b>BK-78901</b> → AI tự chẩn đoán lỗi &amp; <b>hoàn tiền 2.5tr</b>.
+        <b>① Đường thuận:</b> mã <b>BK-78901</b> → AI chẩn đoán lỗi &amp; <b>chuyển nhân viên xử lý hoàn tiền</b>.
       </div>
       <div class="demo-input" style="font-size:22px;padding:22px 26px;border-left:5px solid var(--red);">
         <b>② Tình huống khó:</b> mã <b>BK-99999</b> → gõ “khẩn cấp” → <b>bypass nối người thật</b>.
