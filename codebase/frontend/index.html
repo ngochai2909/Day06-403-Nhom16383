@@ -13,13 +13,21 @@
 <body>
     <!-- DEV PANEL FOR SELECTING PATHS -->
     <div class="dev-panel">
-        <h3><i class="fa-solid fa-code"></i> Developer Panel (4 Paths Demo)</h3>
-        <p>Chọn luồng kịch bản để Prototype giả lập dữ liệu:</p>
+        <h3><i class="fa-solid fa-code"></i> Developer Panel (Demo Scenarios)</h3>
+        <p>Chọn kịch bản để kiểm thử AI, dữ liệu đặt vé và luồng đổi chuyến:</p>
         <select id="scenario-selector">
             <option value="happy">1. Happy Path (Lỗi rõ ràng -> Hoàn tiền tự động)</option>
             <option value="low_confidence">2. Low-confidence (Lỗi không rõ -> AI hỏi lại)</option>
             <option value="failure">3. Failure (AI không hiểu ý khách -> Bypass khẩn cấp)</option>
             <option value="correction">4. Correction (AI phân loại sai độ khẩn cấp -> Khách sửa)</option>
+            <option value="clean_case_1">5. Clean Data #1 (Booking chuẩn, có thể đổi chuyến)</option>
+            <option value="clean_case_2">6. Clean Data #2 (Booking chuẩn, thông tin đầy đủ)</option>
+            <option value="clean_case_3">7. Clean Data #3 (Booking chuẩn, không lỗi)</option>
+            <option value="clean_surcharge">8. Clean Surcharge (Đổi chuyến có phụ thu)</option>
+            <option value="clean_refund">9. Clean Refund (Đổi chuyến có hoàn voucher)</option>
+            <option value="clean_extra_fee">10. Clean Extra Fee (Đổi chuyến thu thêm phí dịch vụ)</option>
+            <option value="clean_mixed_1">11. Clean Mixed #1 (Có cả phụ thu và hoàn tiền)</option>
+            <option value="clean_mixed_2">12. Clean Mixed #2 (Phụ thu thấp hoặc hoàn tiền)</option>
         </select>
         <button id="btn-restart-app" class="btn-dev"><i class="fa-solid fa-rotate-right"></i> Chạy lại Ứng dụng</button>
     </div>
@@ -63,8 +71,10 @@
             </div>
 
             <button id="btn-support" class="btn-primary support-btn">
-                <i class="fa-solid fa-headset"></i> Trợ Giúp Khẩn Cấp
+                <span class="ai-chip">AI</span>
+                <i class="fa-solid fa-robot"></i> Bắt đầu với AI Copilot
             </button>
+            <p class="support-caption">AI phản hồi tức thì • Chuyển nhân viên khi cần</p>
         </div>
 
         <!-- SCREEN 2: Customer Support Chat (AI Crisis Copilot) -->
@@ -87,6 +97,10 @@
                     </div>
                 </div>
                 <i class="fa-solid fa-language"></i>
+            </div>
+            <div class="chat-case-status" id="chat-case-status">
+                <span id="status-badge-scenario" class="status-badge">Scenario: happy</span>
+                <span id="status-badge-booking" class="status-badge soft">Booking: --</span>
             </div>
 
             <div class="chat-container" id="chat-box">
@@ -120,6 +134,27 @@
                 <h3>Đang nối máy khẩn cấp</h3>
                 <p id="handoff-message">AI đã ghi nhận tình huống khẩn cấp (P0). Vui lòng giữ máy, nhân viên hỗ trợ sẽ có mặt trong 30 giây...</p>
                 <button id="btn-close-handoff" class="btn-secondary">Hủy</button>
+            </div>
+        </div>
+
+        <!-- Payment Overlay for surcharge flight rebook -->
+        <div id="payment-overlay" class="overlay hidden">
+            <div class="payment-content">
+                <h3>Thanh toán phụ thu đổi chuyến</h3>
+                <p id="payment-description">Vui lòng quét QR hoặc chuyển khoản theo thông tin bên dưới.</p>
+                <img id="payment-qr-image" class="payment-qr" alt="QR thanh toán phụ thu" />
+                <div class="bank-info">
+                    <p><strong>Ngân hàng:</strong> TPBank</p>
+                    <p><strong>Chủ TK:</strong> TRIP DEMO SERVICE</p>
+                    <p><strong>Số TK:</strong> 190036868686</p>
+                    <p id="payment-transfer-note"><strong>Nội dung:</strong> REBOOK</p>
+                </div>
+                <div class="payment-actions">
+                    <button id="btn-cancel-payment" class="btn-secondary">Hủy</button>
+                    <button id="btn-confirm-payment" class="btn-primary btn-small">
+                        <i class="fa-solid fa-check"></i> Xác nhận đổi chuyến
+                    </button>
+                </div>
             </div>
         </div>
     </div>

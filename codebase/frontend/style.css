@@ -391,10 +391,37 @@ body {
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3);
     transition: transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .btn-primary:active {
     transform: scale(0.98);
+}
+
+.btn-small {
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+.ai-chip {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.support-caption {
+    margin: -16px 20px 0;
+    text-align: center;
+    font-size: 12px;
+    color: #8c8c8c;
 }
 
 /* Screen 2: Chat */
@@ -406,6 +433,28 @@ body {
 
 .chat-header i {
     cursor: pointer;
+}
+
+.chat-case-status {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #eef4ff;
+    border-bottom: 1px solid #d6e4ff;
+}
+
+.status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 4px 10px;
+    color: #0f294d;
+    background: #d6e4ff;
+}
+
+.status-badge.soft {
+    background: #f0f5ff;
+    color: #1d39c4;
 }
 
 .header-title {
@@ -471,6 +520,46 @@ body {
     line-height: 1.5;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     color: #333;
+}
+
+.flight-options-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #0f294d;
+}
+
+.flight-option-btn {
+    width: 100%;
+    border: 1px solid #cfe2ff;
+    background: #f8fbff;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 8px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #1f1f1f;
+}
+
+.flight-option-btn:hover {
+    border-color: #1677ff;
+    box-shadow: 0 4px 10px rgba(22, 119, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.flight-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.price-diff {
+    font-size: 12px;
+    color: #0958d9;
+    font-weight: 600;
 }
 
 .bot-msg.urgent .bubble {
@@ -621,6 +710,58 @@ body {
     width: 80%;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     animation: zoomIn 0.3s ease-out;
+}
+
+.payment-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 20px;
+    text-align: center;
+    width: 86%;
+    max-width: 320px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: zoomIn 0.2s ease-out;
+}
+
+.payment-content h3 {
+    margin-bottom: 6px;
+    color: #0f294d;
+}
+
+.payment-content p {
+    font-size: 13px;
+    color: #595959;
+    line-height: 1.4;
+}
+
+.payment-qr {
+    width: 190px;
+    height: 190px;
+    margin: 12px auto;
+    border-radius: 10px;
+    border: 1px solid #d9d9d9;
+    object-fit: cover;
+}
+
+.bank-info {
+    text-align: left;
+    background: #f7faff;
+    border: 1px solid #d6e4ff;
+    border-radius: 12px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.bank-info p {
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 14px;
 }
 
 @keyframes zoomIn {
