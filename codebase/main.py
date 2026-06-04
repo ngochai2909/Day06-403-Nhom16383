@@ -20,7 +20,10 @@ from mock_data import MOCK_BOOKINGS, SCENARIO_BOOKING_MAP
 
 load_dotenv()
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    # base_url="http://localhost:20128/v1"
+)
 
 # ============================================================
 # SESSION STORE (in-memory, đủ cho demo)
@@ -38,7 +41,6 @@ NGUYÊN TẮC:
 4. error_detail=null → Thừa nhận thiếu dữ liệu, gọi escalate_to_human_agent ngay.
 5. Khách nói "khẩn cấp/sân bay/cứu/gấp/người thật/nhân viên" → escalate_to_human_agent với P0 NGAY.
 6. Khách bảo thông tin hệ thống SAI (ngày bay sai, mức ưu tiên sai) → Xin lỗi, cập nhật đánh giá, escalate nếu cần.
-
 CẤM: Trả lời kiểu "Xin lỗi quý khách, vui lòng liên hệ lại trong giờ hành chính". Trả lời ngắn gọn, tập trung giải pháp, bằng tiếng Việt."""
 
 # ============================================================
@@ -153,6 +155,7 @@ def chat_with_ai(session_id: str, user_message: str) -> dict:
     for _ in range(5):  # max 5 vòng để tránh infinite loop
         response = client.chat.completions.create(
             model="gpt-4o-mini",
+            # model="ag/gemini-3-flash-agent",
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",

@@ -4,6 +4,17 @@
 
 const API_BASE = '';  // Same origin (FastAPI serves frontend)
 
+// Configure marked.js for safe, clean Markdown rendering
+marked.setOptions({
+    breaks: true,       // \n → <br>
+    gfm: true,          // GitHub Flavored Markdown
+});
+
+function renderMarkdown(text) {
+    // Parse markdown to HTML
+    return marked.parse(text);
+}
+
 // DOM Elements
 const screenBooking = document.getElementById('screen-booking');
 const screenChat    = document.getElementById('screen-chat');
@@ -78,13 +89,25 @@ function appendMessage(text, sender, isUrgent = false) {
     if (sender === 'system') {
         msgDiv.className = 'system-msg';
         msgDiv.innerHTML = text;
+    } else if (sender === 'bot') {
+        // Render Markdown từ LLM thành HTML
+        msgDiv.className = `message bot-msg ${isUrgent ? 'urgent' : ''}`;
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble markdown-body';
+        bubble.innerHTML = renderMarkdown(text);
+        msgDiv.appendChild(bubble);
     } else {
-        msgDiv.className = `message ${sender}-msg ${isUrgent ? 'urgent' : ''}`;
-        msgDiv.innerHTML = `<div class="bubble">${text}</div>`;
+        // User message: escape HTML để tránh XSS
+        msgDiv.className = `message user-msg ${isUrgent ? 'urgent' : ''}`;
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = text;
+        msgDiv.appendChild(bubble);
     }
     chatBox.insertBefore(msgDiv, typingIndicator);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
+
 
 function showTyping() {
     typingIndicator.style.display = 'block';
@@ -142,10 +165,11 @@ async function sendMessage(text) {
 
         hideTyping();
 
-        // Hiển thị câu trả lời AI
+        // Hiển thị câu trả lời AI (Markdown được render bởi marked.js)
         if (data.reply) {
-            appendMessage(data.reply.replace(/\n/g, '<br>'), 'bot');
+            appendMessage(data.reply, 'bot');
         }
+
 
         // Kiểm tra escalation
         if (data.escalated) {
