@@ -1,34 +1,31 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Crisis Copilot - Trip.com</title>
     <link rel="stylesheet" href="/static/style.css">
+    <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
-    <!-- DEV PANEL -->
+    <!-- DEV PANEL FOR SELECTING PATHS -->
     <div class="dev-panel">
         <h3><i class="fa-solid fa-code"></i> Developer Panel (4 Paths Demo)</h3>
-        <p>Chọn kịch bản để AI xử lý với dữ liệu thật:</p>
+        <p>Chọn luồng kịch bản để Prototype giả lập dữ liệu:</p>
         <select id="scenario-selector">
-            <option value="happy">1. Happy Path (Lỗi rõ → Hoàn tiền tự động)</option>
-            <option value="low_confidence">2. Low-confidence (Lỗi mờ → AI hỏi lại)</option>
-            <option value="failure">3. Failure (Không có log → Chuyển người)</option>
-            <option value="correction">4. Correction (AI sai ưu tiên → User sửa)</option>
+            <option value="happy">1. Happy Path (Lỗi rõ ràng -> Hoàn tiền tự động)</option>
+            <option value="low_confidence">2. Low-confidence (Lỗi không rõ -> AI hỏi lại)</option>
+            <option value="failure">3. Failure (AI không hiểu ý khách -> Bypass khẩn cấp)</option>
+            <option value="correction">4. Correction (AI phân loại sai độ khẩn cấp -> Khách sửa)</option>
         </select>
-        <button id="btn-restart-app" class="btn-dev"><i class="fa-solid fa-rotate-right"></i> Chạy lại</button>
-        <div class="dev-status" id="dev-status">
-            <span class="status-dot"></span> Sẵn sàng
-        </div>
+        <button id="btn-restart-app" class="btn-dev"><i class="fa-solid fa-rotate-right"></i> Chạy lại Ứng dụng</button>
     </div>
 
     <div class="mobile-frame">
-        <!-- SCREEN 1: Booking Details -->
+        <!-- SCREEN 1: Booking Details with Error Alert -->
         <div id="screen-booking" class="screen active">
             <div class="status-bar">
                 <span>09:40</span>
@@ -43,6 +40,7 @@
                 <h2>Chi Tiết Đơn Hàng</h2>
                 <i class="fa-solid fa-ellipsis"></i>
             </div>
+
             <div class="alert-banner">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <div>
@@ -50,6 +48,7 @@
                     <p>Vé chuyến bay VN123 của bạn có thay đổi trạng thái bất thường. Vui lòng liên hệ hỗ trợ.</p>
                 </div>
             </div>
+
             <div class="booking-card">
                 <div class="flight-route">
                     <div class="city">HAN <span>Hà Nội</span></div>
@@ -62,12 +61,13 @@
                     <p>Trạng thái: <strong style="color: #ff4d4f;" id="ui-flight-status">ĐÃ HỦY</strong></p>
                 </div>
             </div>
+
             <button id="btn-support" class="btn-primary support-btn">
                 <i class="fa-solid fa-headset"></i> Trợ Giúp Khẩn Cấp
             </button>
         </div>
 
-        <!-- SCREEN 2: AI Chat -->
+        <!-- SCREEN 2: Customer Support Chat (AI Crisis Copilot) -->
         <div id="screen-chat" class="screen">
             <div class="status-bar">
                 <span>09:41</span>
@@ -88,7 +88,9 @@
                 </div>
                 <i class="fa-solid fa-language"></i>
             </div>
+
             <div class="chat-container" id="chat-box">
+                <!-- Typing Indicator -->
                 <div class="message bot-msg typing-indicator" id="typing-indicator">
                     <div class="bubble">
                         <span class="dot"></span>
@@ -97,8 +99,11 @@
                     </div>
                 </div>
             </div>
+
             <div class="chat-input-area">
-                <div class="quick-actions" id="quick-actions"></div>
+                <div class="quick-actions" id="quick-actions">
+                    <!-- Buttons injected via JS -->
+                </div>
                 <div class="input-bar">
                     <i class="fa-solid fa-plus icon-btn"></i>
                     <input type="text" id="chat-input" placeholder="Nhắn tin cho AI...">
@@ -108,20 +113,17 @@
             </div>
         </div>
 
-        <!-- Handoff Overlay -->
+        <!-- Handoff Overlay Screen -->
         <div id="handoff-overlay" class="overlay hidden">
             <div class="handoff-content">
                 <i class="fa-solid fa-headset pulsing-icon"></i>
                 <h3>Đang nối máy khẩn cấp</h3>
-                <p id="handoff-message">AI đã ghi nhận tình huống khẩn cấp. Vui lòng giữ máy, nhân viên hỗ trợ sẽ có mặt
-                    trong 30 giây...</p>
-                <button id="btn-close-handoff" class="btn-secondary">Đóng</button>
+                <p id="handoff-message">AI đã ghi nhận tình huống khẩn cấp (P0). Vui lòng giữ máy, nhân viên hỗ trợ sẽ có mặt trong 30 giây...</p>
+                <button id="btn-close-handoff" class="btn-secondary">Hủy</button>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="/static/app.js"></script>
 </body>
-
 </html>
