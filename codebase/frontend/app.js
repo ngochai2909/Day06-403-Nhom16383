@@ -13,6 +13,21 @@ const btnCloseHandoff = document.getElementById('btn-close-handoff');
 const uiFlightStatus = document.getElementById('ui-flight-status');
 const handoffMessage = document.getElementById('handoff-message');
 
+// Configure marked.js for safe, clean Markdown rendering
+if (typeof marked !== 'undefined') {
+    marked.setOptions({
+        breaks: true,       // \n → <br>
+        gfm: true,          // GitHub Flavored Markdown
+    });
+}
+
+function renderMarkdown(text) {
+    if (typeof marked !== 'undefined') {
+        return marked.parse(text);
+    }
+    return text.replace(/\n/g, '<br>'); // fallback
+}
+
 // Dev Panel
 const scenarioSelector = document.getElementById('scenario-selector');
 const btnRestartApp = document.getElementById('btn-restart-app');
@@ -91,9 +106,21 @@ function escapeHtml(text) {
 
 function appendMessage(text, sender, isUrgent = false) {
     const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${sender}-msg ${isUrgent ? 'urgent' : ''}`;
-    const content = sender === 'user' ? escapeHtml(text) : text;
-    msgDiv.innerHTML = `<div class="bubble">${content}</div>`;
+    if (sender === 'system') {
+        msgDiv.className = 'system-msg';
+        msgDiv.innerHTML = text;
+    } else if (sender === 'bot') {
+        // Render Markdown từ LLM thành HTML
+        msgDiv.className = `message bot-msg ${isUrgent ? 'urgent' : ''}`;
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble markdown-body';
+        bubble.innerHTML = renderMarkdown(text);
+        msgDiv.appendChild(bubble);
+    } else {
+        msgDiv.className = `message ${sender}-msg ${isUrgent ? 'urgent' : ''}`;
+        const content = sender === 'user' ? escapeHtml(text) : text;
+        msgDiv.innerHTML = `<div class="bubble">${content}</div>`;
+    }
     chatBox.insertBefore(msgDiv, typingIndicator);
     chatBox.scrollTop = chatBox.scrollHeight;
 }

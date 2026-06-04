@@ -24,7 +24,10 @@ _api_key = os.environ.get("OPENAI_API_KEY")
 if not _api_key:
     raise RuntimeError("OPENAI_API_KEY chưa được đặt. Kiểm tra file .env trong thư mục codebase/.")
 
-client = OpenAI(api_key=_api_key)
+client = OpenAI(
+    api_key=_api_key,
+    base_url="http://localhost:20128/v1"
+)
 
 # ============================================================
 # SESSION STORE (in-memory, đủ cho demo)
